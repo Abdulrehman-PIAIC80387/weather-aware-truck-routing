@@ -50,6 +50,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const mapRef = useRef<MapRef>(null);
   const hourRef = useRef(0);
   const [loaded, setLoaded] = useState(false);
+  const [labelLayer, setLabelLayer] = useState<string>(); // grid goes beneath place names
   const [hovered, setHovered] = useState<Picked | null>(null);
   const [opened, setOpened] = useState<Picked | null>(null);
 
@@ -130,7 +131,10 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       mapStyle={MAP_STYLE}
       interactiveLayerIds={INTERACTIVE_LAYERS}
       cursor={hovered ? "pointer" : "grab"}
-      onLoad={() => setLoaded(true)}
+      onLoad={(event) => {
+        setLabelLayer(event.target.getStyle().layers.find((layer) => layer.type === "symbol")?.id);
+        setLoaded(true);
+      }}
       onClick={handleClick}
       onMouseMove={handleHover}
       onMouseLeave={() => setHovered(null)}
@@ -138,7 +142,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       <NavigationControl position="top-right" showCompass={false} />
       {grid && (
         <Source id="grid" type="geojson" data={grid}>
-          <Layer {...riskGrid} />
+          <Layer {...riskGrid} beforeId={labelLayer} />
         </Source>
       )}
       {segments && (

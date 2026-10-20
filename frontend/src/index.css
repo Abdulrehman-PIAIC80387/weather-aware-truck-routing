@@ -17,6 +17,72 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
 .panel { overflow-y: auto; padding: 20px; background: #fff; border-right: 1px solid var(--border); }
 .map-area { position: relative; height: 100%; }
 
+/* Form */
+.plan-form { display: grid; gap: 12px; margin: 16px 0; }
+.plan-form label, .interval legend { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 600; }
+.plan-form input:not([type="radio"]) {
+  width: 100%; padding: 9px 11px; border: 1px solid #d1d5db; border-radius: 6px; font: inherit; font-weight: 400;
+}
+.form-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; }
+.location-input { position: relative; }
+.suggestions {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 10; margin: 4px 0 0; padding: 4px 0;
+  list-style: none; background: #fff; border: 1px solid #d1d5db; border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12); font-weight: 400;
+}
+.suggestions li { padding: 8px 12px; cursor: pointer; }
+.suggestions li[aria-selected="true"], .suggestions li:hover { background: #eff6ff; }
+.interval { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
+.interval legend { margin-bottom: 4px; }
+.interval label {
+  display: block; flex: 1; padding: 7px 0; border: 1px solid #d1d5db; border-radius: 6px;
+  text-align: center; font-weight: 500; cursor: pointer;
+}
+.interval label.active { border-color: var(--accent); background: #eff6ff; color: var(--accent); }
+.interval input { position: absolute; opacity: 0; pointer-events: none; }
+.plan-form button {
+  padding: 10px 16px; border: 0; border-radius: 6px; background: var(--accent); color: #fff;
+  font-size: 1rem; cursor: pointer;
+}
+.plan-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Status */
+.loading { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+.spinner {
+  width: 16px; height: 16px; border: 2px solid #d1d5db; border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.unsafe-banner {
+  margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: #fef2f2;
+  border: 1px solid #fecaca; color: #991b1b; font-size: 0.875rem;
+}
+
+/* Route cards */
+.route-cards { display: grid; gap: 10px; }
+.route-card {
+  display: block; width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: #fff; text-align: left; font: inherit; color: inherit; cursor: pointer;
+}
+.route-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgb(37 99 235 / 0.2); }
+.route-card header { display: flex; justify-content: space-between; align-items: center; }
+.badge { padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #166534; font-size: 0.75rem; font-weight: 600; }
+.route-stats { display: flex; gap: 12px; margin: 6px 0; font-size: 0.85rem; color: var(--muted); }
+.route-card dl { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 8px 0 0; }
+.route-card dl div { padding: 4px; border-radius: 6px; background: #f9fafb; }
+.route-card dl div.zero { opacity: 0.55; }
+.route-card dt { display: flex; align-items: center; gap: 3px; font-size: 0.68rem; color: var(--muted); }
+.route-card dt i { width: 8px; height: 8px; border-radius: 2px; }
+.route-card dd { margin: 2px 0 0; font-size: 0.85rem; font-weight: 600; }
+.reason { margin: 8px 0 0; font-size: 0.82rem; color: #166534; }
+
+/* Checkpoint timeline */
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.timeline li > i { flex: none; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; border: 1px solid rgb(0 0 0 / 0.25); }
+.level-chip { padding: 0 6px; border: 1.5px solid; border-radius: 8px; font-size: 0.72rem; }
+.reasons { color: #9a3412; font-size: 0.8rem; }
+
 /* Map overlays */
 .route-label {
   padding: 3px 8px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
@@ -56,3 +122,73 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
   width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--accent); color: #fff; cursor: pointer;
 }
 .slider output { min-width: 150px; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* Plan form */
+.plan-form { display: grid; gap: 12px; margin: 16px 0; }
+.plan-form label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 600; }
+.plan-form input:not([type="radio"]) {
+  width: 100%; padding: 9px 11px; border: 1px solid #d1d5db; border-radius: 6px; font: inherit; font-weight: 400;
+}
+.form-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; }
+.interval { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
+.interval legend { margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; }
+.interval label {
+  flex: 1; display: block; padding: 7px 0; text-align: center; border: 1px solid #d1d5db; border-radius: 6px;
+  cursor: pointer; font-weight: 500;
+}
+.interval label.active { border-color: var(--accent); background: #eff6ff; color: var(--accent); }
+.interval input { position: absolute; opacity: 0; pointer-events: none; }
+.plan-form button {
+  padding: 11px 16px; border: 0; border-radius: 6px; background: var(--accent); color: #fff;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.plan-form button:disabled { opacity: 0.55; cursor: not-allowed; }
+.location-input { position: relative; }
+.suggestions {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 10; margin: 4px 0 0; padding: 4px 0;
+  list-style: none; background: #fff; border: 1px solid #d1d5db; border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12); font-weight: 400;
+}
+.suggestions li { padding: 8px 12px; cursor: pointer; }
+.suggestions li[aria-selected="true"], .suggestions li:hover { background: #eff6ff; }
+
+/* States */
+.loading { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; background: #f9fafb; }
+.spinner {
+  width: 18px; height: 18px; border: 3px solid #dbeafe; border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.unsafe-banner { padding: 10px 12px; border-left: 4px solid #e53935; border-radius: 6px; background: #fef2f2; font-size: 0.9rem; }
+
+/* Route cards */
+.route-cards { display: grid; gap: 10px; }
+.route-card {
+  display: block; width: 100%; padding: 12px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+}
+.route-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgb(37 99 235 / 0.25); }
+.route-card header { display: flex; justify-content: space-between; align-items: center; }
+.badge { padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: #166534; font-size: 0.75rem; font-weight: 600; }
+.route-stats { display: flex; gap: 12px; margin: 6px 0 8px; font-size: 0.85rem; color: var(--muted); }
+.route-card dl { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0; }
+.route-card dl div { padding: 4px; border-radius: 6px; background: #f9fafb; }
+.route-card dl div.zero { opacity: 0.55; }
+.route-card dt { display: flex; align-items: center; gap: 3px; font-size: 0.68rem; color: var(--muted); }
+.route-card dt i { width: 8px; height: 8px; border-radius: 2px; }
+.route-card dd { margin: 2px 0 0; font-size: 0.8rem; font-weight: 600; }
+.reason { margin: 8px 0 0; font-size: 0.85rem; color: #166534; }
+
+/* Checkpoint timeline */
+.timeline { margin: 0; padding: 0; list-style: none; }
+.timeline li { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.timeline li > i { flex: none; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; border: 1px solid rgb(0 0 0 / 0.25); }
+.level-chip { padding: 0 6px; border: 1.5px solid; border-radius: 8px; font-size: 0.72rem; }
+.reasons { color: #b91c1c; font-size: 0.8rem; }
+
+@media (max-width: 800px) {
+  .legend { max-width: calc(100% - 70px); padding: 6px 8px; font-size: 11px; }
+  .legend small { display: none; }
+  .slider { bottom: 34px; }
+  .route-card dl { grid-template-columns: repeat(3, 1fr); }
+}
