@@ -11,6 +11,7 @@ backend/.cache/
 # Node
 node_modules/
 frontend/dist/
+*.tsbuildinfo
 
 # Misc
 .env

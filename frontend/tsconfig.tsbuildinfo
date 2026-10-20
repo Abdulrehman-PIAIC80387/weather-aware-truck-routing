@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/api.ts","./src/main.tsx","./src/vite-env.d.ts","./src/hooks/useGeocode.ts","./src/hooks/usePlan.ts","./src/types/plan.ts","./src/utils/format.ts","./src/utils/risk.ts"],"version":"5.6.3"}

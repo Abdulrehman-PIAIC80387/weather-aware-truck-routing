@@ -1,15 +1,16 @@
+import { useState } from "react";
+import { RouteMap } from "./components/map/RouteMap";
+
 export default function App() {
+  const [selected, setSelected] = useState(0);
   return (
     <div className="layout">
       <aside className="panel">
         <h1>Weather-Aware Truck Routing</h1>
-        <p className="muted">
-          <a href="/api/docs/" target="_blank" rel="noreferrer">
-            API docs
-          </a>
-        </p>
       </aside>
-      <main className="map-area" />
+      <main className="map-area">
+        <RouteMap plan={null} selected={selected} onSelect={setSelected} />
+      </main>
     </div>
   );
 }
