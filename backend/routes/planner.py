@@ -19,7 +19,7 @@ HOUR = timedelta(hours=1)
 
 def plan_trip(origin, destination, departure: datetime, load_lb: int, interval: int) -> dict:
     departure = departure.astimezone(UTC)
-    routes = get_routes(origin, destination, departure, load_lb)
+    routes = get_routes(origin, destination, load_lb)
     grid = corridor_grid(routes)
 
     start = departure.replace(minute=0, second=0, microsecond=0)

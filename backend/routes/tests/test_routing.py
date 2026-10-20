@@ -1,12 +1,9 @@
-from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase, override_settings
 
 from routes.domain import Route
 from routes.routing import NoRouteError, RoutingError, distinct, get_routes, to_route
-
-DEPARTURE = datetime(2030, 1, 1, tzinfo=UTC)
 
 
 def tomtom_route(longitudes: list[float]) -> dict:
@@ -44,7 +41,7 @@ class DistinctTests(SimpleTestCase):
 @patch("routes.routing.requests.get")
 class GetRoutesTests(SimpleTestCase):
     def call(self):
-        return get_routes((41.0, -87.0), (39.0, -104.0), DEPARTURE, 30_000)
+        return get_routes((41.0, -87.0), (39.0, -104.0), 30_000)
 
     def test_sends_gross_weight_in_kg(self, get):
         get.return_value = Mock(ok=True, status_code=200, json=Mock(return_value={"routes": []}))
@@ -53,6 +50,7 @@ class GetRoutesTests(SimpleTestCase):
         params = get.call_args.kwargs["params"]
         self.assertEqual(params["vehicleWeight"], round(65_000 * 0.45359237))
         self.assertEqual(params["travelMode"], "truck")
+        self.assertNotIn("departAt", params)  # it limits long trips to one route
 
     def test_bad_request_means_no_route(self, get):
         get.return_value = Mock(ok=False, status_code=400)

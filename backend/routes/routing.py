@@ -2,10 +2,12 @@
 
 TomTom's `progress` table gives distance and driving time at some route points; the
 points between them are filled in by their straight-line distance along the road.
+
+No `departAt` is sent: with a future departure TomTom returns a single route on long
+trips, so routes use current conditions and the departure only shifts the ETAs.
 """
 
 import math
-from datetime import UTC, datetime, timedelta
 
 import requests
 from django.conf import settings
@@ -30,7 +32,7 @@ class NoRouteError(APIException):
     default_detail = "No truck route was found between these places."
 
 
-def get_routes(origin, destination, departure, load_lb: int) -> list[Route]:
+def get_routes(origin, destination, load_lb: int) -> list[Route]:
     """Up to 3 distinct truck routes, fastest first. Points are (latitude, longitude)."""
     key = settings.ROUTING["TOMTOM_API_KEY"]
     if not key:
@@ -41,7 +43,6 @@ def get_routes(origin, destination, departure, load_lb: int) -> list[Route]:
         "travelMode": "truck",
         "vehicleCommercial": "true",
         "vehicleWeight": round((EMPTY_TRUCK_LB + load_lb) * KG_PER_LB),
-        "departAt": _depart_at(departure),
         "maxAlternatives": ROUTE_COUNT - 1,  # more alternatives makes TomTom 3x slower
         "extendedRouteRepresentation": ["distance", "travelTime"],
     }
@@ -61,13 +62,6 @@ def get_routes(origin, destination, departure, load_lb: int) -> list[Route]:
     if not routes:
         raise NoRouteError()
     return distinct(routes)
-
-
-def _depart_at(departure: datetime) -> str:
-    """TomTom rejects past times, and departures within the 1 h grace period are "now"."""
-    if departure <= datetime.now(UTC) + timedelta(minutes=1):
-        return "now"
-    return departure.isoformat(timespec="seconds")
 
 
 def to_route(data: dict) -> Route:
