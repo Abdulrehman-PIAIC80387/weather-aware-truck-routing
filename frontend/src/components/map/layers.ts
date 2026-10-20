@@ -53,4 +53,28 @@ export function checkpointCircles(selected: number): LayerProps {
   };
 }
 
+/** Risk at the slider hour, from each cell's feature state; Low cells stay clear. */
+export const riskGrid: LayerProps = {
+  id: "risk-grid",
+  type: "fill",
+  paint: {
+    "fill-color": levelColor(["coalesce", ["feature-state", "r"], 0], "rgba(0, 0, 0, 0)"),
+    "fill-opacity": ["match", ["coalesce", ["feature-state", "r"], 0], 0, 0, 0.42],
+    "fill-outline-color": "rgba(0, 0, 0, 0)",
+  },
+};
+
+export function truckDots(selected: number): LayerProps {
+  return {
+    id: "trucks",
+    type: "circle",
+    paint: {
+      "circle-color": "#ffffff",
+      "circle-radius": ["case", isSelected(selected), 7, 4],
+      "circle-stroke-color": "#111827",
+      "circle-stroke-width": ["case", isSelected(selected), 3, 2],
+    },
+  };
+}
+
 export const INTERACTIVE_LAYERS = ["checkpoints", "route-lines"];

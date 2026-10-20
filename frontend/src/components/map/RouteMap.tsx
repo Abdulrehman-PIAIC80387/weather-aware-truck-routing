@@ -1,5 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { GeoJSONSource } from "maplibre-gl";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import Map, {
   Layer,
   type MapLayerMouseEvent,
@@ -12,8 +13,16 @@ import Map, {
 import type { Plan } from "../../types/plan";
 import { formatDuration, formatMiles, formatTime } from "../../utils/format";
 import { levelInfo } from "../../utils/risk";
-import { bounds, checkpointPoints, midpoint, routeSegments } from "./geojson";
-import { INTERACTIVE_LAYERS, checkpointCircles, routeCasing, routeLines } from "./layers";
+import { Legend } from "../Legend";
+import { bounds, checkpointPoints, gridCells, midpoint, routeSegments, truckPositions } from "./geojson";
+import {
+  INTERACTIVE_LAYERS,
+  checkpointCircles,
+  riskGrid,
+  routeCasing,
+  routeLines,
+  truckDots,
+} from "./layers";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
 const CONTIGUOUS_US = { longitude: -98.35, latitude: 39.5, zoom: 3.6 };
@@ -24,22 +33,64 @@ interface RouteMapProps {
   onSelect: (route: number) => void;
 }
 
+/** Lets the slider move the map through time without re-rendering React. */
+export interface RouteMapHandle {
+  setHour: (hour: number) => void;
+}
+
 interface Picked {
   route: number;
   position: number;
 }
 
-export function RouteMap({ plan, selected, onSelect }: RouteMapProps) {
+export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function RouteMap(
+  { plan, selected, onSelect },
+  ref,
+) {
   const mapRef = useRef<MapRef>(null);
+  const hourRef = useRef(0);
   const [loaded, setLoaded] = useState(false);
   const [hovered, setHovered] = useState<Picked | null>(null);
   const [opened, setOpened] = useState<Picked | null>(null);
 
   // Built once per plan, so react-map-gl never re-sends the same data to the map.
   const segments = useMemo(() => plan && routeSegments(plan), [plan]);
+  const grid = useMemo(() => plan && gridCells(plan), [plan]);
+  const trucks = useMemo(() => plan && truckPositions(plan, 0), [plan]);
   const checkpoints = useMemo(() => plan && checkpointPoints(plan), [plan]);
   const routeLayer = useMemo(() => routeLines(selected), [selected]);
   const checkpointLayer = useMemo(() => checkpointCircles(selected), [selected]);
+  const truckLayer = useMemo(() => truckDots(selected), [selected]);
+
+  // ~250 feature-state updates and a 3-point setData: no re-tiling, no React render.
+  const applyHour = useCallback(
+    (hour: number) => {
+      hourRef.current = hour;
+      const map = mapRef.current?.getMap();
+      if (!plan || !map?.getSource("grid")) return;
+      plan.grid.risk.forEach((hours, id) => {
+        map.setFeatureState({ source: "grid", id }, { r: Number(hours[hour]) });
+      });
+      (map.getSource("trucks") as GeoJSONSource | undefined)?.setData(truckPositions(plan, hour));
+    },
+    [plan],
+  );
+
+  useImperativeHandle(ref, () => ({ setHour: applyHour }), [applyHour]);
+
+  // Paint the current hour once the new grid source has loaded its data.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!plan || !loaded || !map) return;
+    const onData = (event: { sourceId?: string; isSourceLoaded?: boolean }) => {
+      if (event.sourceId === "grid" && event.isSourceLoaded) applyHour(hourRef.current);
+    };
+    map.on("sourcedata", onData);
+    applyHour(hourRef.current);
+    return () => {
+      map.off("sourcedata", onData);
+    };
+  }, [plan, loaded, applyHour]);
 
   useEffect(() => {
     setOpened(null);
@@ -85,6 +136,11 @@ export function RouteMap({ plan, selected, onSelect }: RouteMapProps) {
       onMouseLeave={() => setHovered(null)}
     >
       <NavigationControl position="top-right" showCompass={false} />
+      {grid && (
+        <Source id="grid" type="geojson" data={grid}>
+          <Layer {...riskGrid} />
+        </Source>
+      )}
       {segments && (
         <Source id="routes" type="geojson" data={segments}>
           <Layer {...routeCasing} />
@@ -96,6 +152,12 @@ export function RouteMap({ plan, selected, onSelect }: RouteMapProps) {
           <Layer {...checkpointLayer} />
         </Source>
       )}
+      {trucks && (
+        <Source id="trucks" type="geojson" data={trucks}>
+          <Layer {...truckLayer} />
+        </Source>
+      )}
+      {plan && <Legend />}
 
       {plan?.routes.map((route, index) => {
         const [longitude, latitude] = midpoint(route);
@@ -166,4 +228,4 @@ export function RouteMap({ plan, selected, onSelect }: RouteMapProps) {
       )}
     </Map>
   );
-}
+});

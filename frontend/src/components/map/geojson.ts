@@ -1,4 +1,4 @@
-import type { FeatureCollection, LineString, Point } from "geojson";
+import type { FeatureCollection, LineString, Point, Polygon } from "geojson";
 import type { Plan, PlannedRoute } from "../../types/plan";
 import { UNKNOWN_DIGIT } from "../../utils/risk";
 
@@ -44,5 +44,59 @@ export function bounds(plan: Plan): [LngLat, LngLat] {
   return [
     [Math.min(...longitudes), Math.min(...latitudes)],
     [Math.max(...longitudes), Math.max(...latitudes)],
+  ];
+}
+
+/** Grid cells as squares with numeric ids; their risk colour is set per hour as feature state. */
+export function gridCells(plan: Plan): FeatureCollection<Polygon> {
+  const half = plan.grid.size / 2;
+  return {
+    type: "FeatureCollection",
+    features: plan.grid.cells.map(([lat, lon], id) => ({
+      type: "Feature",
+      id,
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [lon - half, lat - half],
+            [lon + half, lat - half],
+            [lon + half, lat + half],
+            [lon - half, lat + half],
+            [lon - half, lat - half],
+          ],
+        ],
+      },
+    })),
+  };
+}
+
+const HOUR_MS = 3_600_000;
+
+/** Where each truck is `hour` hours after departure, interpolated between checkpoint ETAs. */
+export function truckPositions(plan: Plan, hour: number): FeatureCollection<Point> {
+  const time = Date.parse(plan.departure) + hour * HOUR_MS;
+  return {
+    type: "FeatureCollection",
+    features: plan.routes.map((route, index) => ({
+      type: "Feature",
+      properties: { route: index },
+      geometry: { type: "Point", coordinates: positionAt(route, time) },
+    })),
+  };
+}
+
+function positionAt(route: PlannedRoute, time: number): LngLat {
+  const stops = route.checkpoints;
+  const next = stops.findIndex((stop) => Date.parse(stop.eta) > time);
+  if (next === -1) return [stops.at(-1)!.longitude, stops.at(-1)!.latitude];
+  if (next === 0) return [stops[0].longitude, stops[0].latitude];
+  const a = stops[next - 1];
+  const b = stops[next];
+  const share = (time - Date.parse(a.eta)) / (Date.parse(b.eta) - Date.parse(a.eta));
+  return [
+    a.longitude + (b.longitude - a.longitude) * share,
+    a.latitude + (b.latitude - a.latitude) * share,
   ];
 }
