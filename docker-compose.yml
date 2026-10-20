@@ -8,6 +8,7 @@ services:
       DJANGO_ALLOWED_HOSTS: "*"
       SQLITE_PATH: /app/data/db.sqlite3
       FRONTEND_URL: "http://localhost:${FRONTEND_PORT:-3020}"
+      TOMTOM_API_KEY: ${TOMTOM_API_KEY:?Set TOMTOM_API_KEY in .env}
     volumes:
       - sqlite_data:/app/data
     ports:
