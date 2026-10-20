@@ -1,0 +1,8 @@
+Django==6.1.1
+djangorestframework==3.18.1
+drf-spectacular==0.30.0
+drf-spectacular-sidecar==2026.10.1
+django-cors-headers==4.9.0
+gunicorn==26.2.0
+requests==2.34.2
+whitenoise==6.12.0

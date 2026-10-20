@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    environment:
+      DJANGO_DEBUG: "1"
+      DJANGO_ALLOWED_HOSTS: "*"
+      SQLITE_PATH: /app/data/db.sqlite3
+      FRONTEND_URL: "http://localhost:${FRONTEND_PORT:-3020}"
+    volumes:
+      - sqlite_data:/app/data
+    ports:
+      - "${BACKEND_PORT:-8020}:8000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3020}:80"
+
+volumes:
+  sqlite_data:
