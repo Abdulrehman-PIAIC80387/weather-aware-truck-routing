@@ -71,15 +71,22 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "UNAUTHENTICATED_USER": None,
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50,
 }
+
+# Forecasts and plans; a file cache is shared by every gunicorn worker.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.environ.get("CACHE_DIR", BASE_DIR / ".cache"),
+    }
+}
+PLAN_CACHE_SECONDS = int(os.environ.get("PLAN_CACHE_SECONDS", "3600"))
 
 # Swagger / OpenAPI (drf-spectacular)
 SPECTACULAR_SETTINGS = {
     "TITLE": "Weather-Aware Truck Routing API",
-    "DESCRIPTION": "Plans a US truck route and flags weather hazards at the time the truck "
-    "reaches each part of the road.",
+    "DESCRIPTION": "Recommends the safest of three US truck routes from the weather at the "
+    "time the truck reaches each checkpoint and its load weight.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_DIST": "SIDECAR",
@@ -87,16 +94,16 @@ SPECTACULAR_SETTINGS = {
     "REDOC_DIST": "SIDECAR",
 }
 
-# Free routing API (no key). Point OSRM_URL at a self-hosted OSRM for production use.
+# TomTom truck routing (free key: https://developer.tomtom.com)
 ROUTING = {
-    "OSRM_URL": os.environ.get("OSRM_URL", "https://router.project-osrm.org"),
-    "TIMEOUT_SECONDS": float(os.environ.get("ROUTING_TIMEOUT_SECONDS", "60")),
+    "TOMTOM_URL": "https://api.tomtom.com/routing/1/calculateRoute",
+    "TOMTOM_API_KEY": os.environ.get("TOMTOM_API_KEY", ""),
+    "TIMEOUT_SECONDS": (5, 30),  # (connect, read)
 }
 
-# Free weather API (no key)
+# Free weather API (no key): https://open-meteo.com
 WEATHER = {
     "OPEN_METEO_URL": os.environ.get("OPEN_METEO_URL", "https://api.open-meteo.com/v1/forecast"),
-    "TIMEOUT_SECONDS": float(os.environ.get("WEATHER_TIMEOUT_SECONDS", "30")),
+    "TIMEOUT_SECONDS": (5, 30),
+    "CACHE_SECONDS": int(os.environ.get("WEATHER_CACHE_SECONDS", "3600")),
 }
-
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3020")
