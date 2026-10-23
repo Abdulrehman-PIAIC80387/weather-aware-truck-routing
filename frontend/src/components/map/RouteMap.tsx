@@ -1,6 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Point } from "geojson";
-import type { GeoJSONSource, MapGeoJSONFeature } from "maplibre-gl";
+import type { CanvasSource, GeoJSONSource, MapGeoJSONFeature } from "maplibre-gl";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import Map, {
   Layer,
@@ -20,7 +20,6 @@ import { BASEMAPS, type BasemapId, applyNavyBasemap } from "./basemap";
 import {
   bounds,
   checkpointPoints,
-  gridCells,
   levelBounds,
   levelsPresent,
   midpoint,
@@ -29,14 +28,15 @@ import {
 } from "./geojson";
 import {
   INTERACTIVE_LAYERS,
+  riskAreas,
   checkpointCircles,
   checkpointClusters,
   clusterCounts,
-  riskGrid,
   routeCasing,
   routeLines,
   truckDots,
 } from "./layers";
+import { riskRaster } from "./riskContours";
 
 const CONTIGUOUS_US = { longitude: -98.35, latitude: 39.5, zoom: 3.6 };
 
@@ -69,15 +69,16 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const [hovered, setHovered] = useState<Picked | null>(null);
   const [pointer, setPointer] = useState(false);
   const [focus, setFocus] = useState<number | null>(null); // legend level shown alone
+  const focusRef = useRef(focus);
+  focusRef.current = focus;
   const [opened, setOpened] = useState<Picked | null>(null);
 
   // Built once per plan, so react-map-gl never re-sends the same data to the map.
   const segments = useMemo(() => plan && routeSegments(plan), [plan]);
-  const grid = useMemo(() => plan && gridCells(plan), [plan]);
+  const raster = useMemo(() => plan && riskRaster(plan), [plan]);
   const trucks = useMemo(() => plan && truckPositions(plan, 0), [plan]);
   const checkpoints = useMemo(() => plan && checkpointPoints(plan, focus), [plan, focus]);
   const present = useMemo(() => (plan ? levelsPresent(plan) : new Set<number>()), [plan]);
-  const gridLayer = useMemo(() => riskGrid(focus), [focus]);
   const casingLayer = useMemo(
     () => routeCasing(BASEMAPS[basemap].casing, focus),
     [basemap, focus],
@@ -86,35 +87,51 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const checkpointLayer = useMemo(() => checkpointCircles(selected), [selected]);
   const truckLayer = useMemo(() => truckDots(selected), [selected]);
 
-  // ~250 feature-state updates and a 3-point setData: no re-tiling, no React render.
+  // Redraws the risk curves on their canvas, uploads it once, and moves the trucks.
+  // A few milliseconds per slider step, with no React render.
   const applyHour = useCallback(
     (hour: number) => {
       hourRef.current = hour;
+      if (!plan || !raster) return;
+      raster.draw(hour, focusRef.current);
       const map = mapRef.current?.getMap();
-      if (!plan || !map?.getSource("grid")) return;
-      plan.grid.risk.forEach((hours, id) => {
-        map.setFeatureState({ source: "grid", id }, { r: Number(hours[hour]) });
-      });
-      (map.getSource("trucks") as GeoJSONSource | undefined)?.setData(truckPositions(plan, hour));
+      const grid = map?.getSource("grid") as CanvasSource | undefined;
+      if (map && grid) {
+        grid.play(); // the next frame re-reads the canvas into the map texture
+        map.once("render", () => grid.pause());
+      }
+      (map?.getSource("trucks") as GeoJSONSource | undefined)?.setData(truckPositions(plan, hour));
     },
-    [plan],
+    [plan, raster],
   );
 
-  useImperativeHandle(ref, () => ({ setHour: applyHour }), [applyHour]);
+  useEffect(() => applyHour(hourRef.current), [focus, applyHour]);
 
-  // Paint the current hour once the new grid source has loaded its data.
+  // react-map-gl has no canvas source, so the risk layer is managed here: added for each
+  // plan and again after a base map change reloads the style, beneath the place labels.
+  const addRiskAreas = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map?.style?._loaded) return; // style JSON ready (tiles may still be loading)
+    if (map.getLayer(riskAreas.id)) map.removeLayer(riskAreas.id);
+    if (map.getSource("grid")) map.removeSource("grid");
+    if (!raster) return;
+    const { canvas, coordinates } = raster;
+    map.addSource("grid", { type: "canvas", canvas, coordinates, animate: false });
+    map.addLayer(riskAreas, BASEMAPS[basemapRef.current].labelLayer);
+    applyHour(hourRef.current);
+  }, [raster, applyHour]);
+
   useEffect(() => {
     const map = mapRef.current?.getMap();
-    if (!plan || !loaded || !map) return;
-    const onData = (event: { sourceId?: string; isSourceLoaded?: boolean }) => {
-      if (event.sourceId === "grid" && event.isSourceLoaded) applyHour(hourRef.current);
-    };
-    map.on("sourcedata", onData);
-    applyHour(hourRef.current);
+    if (!loaded || !map) return;
+    addRiskAreas();
+    map.on("style.load", addRiskAreas);
     return () => {
-      map.off("sourcedata", onData);
+      map.off("style.load", addRiskAreas);
     };
-  }, [plan, loaded, applyHour]);
+  }, [loaded, addRiskAreas]);
+
+  useImperativeHandle(ref, () => ({ setHour: applyHour }), [applyHour]);
 
   useEffect(() => {
     setOpened(null);
@@ -196,13 +213,6 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       <NavigationControl position="top-right" showCompass={false} />
       <ScaleControl position="bottom-left" unit="metric" maxWidth={120} />
       <ScaleControl position="bottom-left" unit="imperial" maxWidth={120} />
-      {grid && (
-        // Remounted per base map: its label layer id differs, so the grid is re-added
-        // beneath the new labels once the new style has loaded instead of moved early.
-        <Source key={basemap} id="grid" type="geojson" data={grid}>
-          <Layer {...gridLayer} beforeId={BASEMAPS[basemap].labelLayer} />
-        </Source>
-      )}
       {segments && (
         <Source id="routes" type="geojson" data={segments}>
           <Layer {...casingLayer} />

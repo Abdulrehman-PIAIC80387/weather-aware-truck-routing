@@ -1,4 +1,4 @@
-import type { FeatureCollection, LineString, Point, Polygon } from "geojson";
+import type { FeatureCollection, LineString, Point } from "geojson";
 import type { Plan, PlannedRoute } from "../../types/plan";
 import { UNKNOWN_DIGIT } from "../../utils/risk";
 
@@ -75,31 +75,6 @@ function boundsOf(points: LngLat[]): [LngLat, LngLat] {
     [Math.min(...longitudes), Math.min(...latitudes)],
     [Math.max(...longitudes), Math.max(...latitudes)],
   ];
-}
-
-/** Grid cells as squares with numeric ids; their risk colour is set per hour as feature state. */
-export function gridCells(plan: Plan): FeatureCollection<Polygon> {
-  const half = plan.grid.size / 2;
-  return {
-    type: "FeatureCollection",
-    features: plan.grid.cells.map(([lat, lon], id) => ({
-      type: "Feature",
-      id,
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [lon - half, lat - half],
-            [lon + half, lat - half],
-            [lon + half, lat + half],
-            [lon - half, lat + half],
-            [lon - half, lat - half],
-          ],
-        ],
-      },
-    })),
-  };
 }
 
 const HOUR_MS = 3_600_000;

@@ -155,14 +155,21 @@ runner-up. If even the best route has Severe or No Travel miles, the UI shows a
   - Checkpoints show the ETA and level on hover, and conditions and reasons on click.
   - On-map labels give each route's time and severe miles, mark the recommended route,
     and show the arrival time.
-- **Risk grid (the "heatmap"):** grid cells coloured by risk level at the slider hour.
-  A blurred density heatmap was rejected because it adds overlapping values together
-  and can show risk levels no cell actually has.
-- **Smooth slider:** each cell's colour is stored on the map feature itself, so moving
-  the slider changes those values without re-sending map data or re-rendering React.
-  That costs about 6 ms of script per step.
+- **Risk areas (the "heatmap"):** smooth curves of each risk level at the slider hour.
+  - The forecast grid is interpolated and traced into contour bands (d3-contour).
+  - The bands are painted opaque onto a canvas, highest level last, and the map shows
+    that canvas at one opacity. Bands never blend, so every colour on the map is a real
+    level from the legend.
+  - A blurred density heatmap was rejected because it adds overlapping values together
+    and can show risk levels no area actually has.
+- **Smooth slider:** each step redraws the canvas and uploads it to the map once,
+  without re-sending map data or re-rendering React. That costs about 13 ms of script
+  the first time an hour is shown, and less once it is cached.
   - A **Play** button animates the 48 hours.
   - A truck dot shows where each truck is at the slider hour.
+- **Legend filter and clusters:** clicking a legend level shows only its areas, route
+  stretches and checkpoints, and zooms to them. Zoomed out, checkpoints merge into
+  counted clusters coloured by their worst level.
 - **Small responses:** route lines are simplified (Douglas–Peucker), risk is sent as
   digit strings, and JSON is gzipped. New York → Los Angeles at 10-mile checkpoints is
   82 KB over the wire.
@@ -211,7 +218,8 @@ frontend/src/
 ├── hooks/         usePlan, useGeocode
 ├── components/    PlanForm, LocationInput, RouteCards, CheckpointList,
 │                  UnsafeBanner, HeatmapSlider, Legend
-├── components/map/  RouteMap, layers (styles), geojson (pure builders)
+├── components/map/  RouteMap, layers (styles), geojson (pure builders),
+│                    riskContours (curves), basemap (Navy/Dark/Light)
 ├── types/         API types
 └── utils/         risk colours/labels, formatting
 ```

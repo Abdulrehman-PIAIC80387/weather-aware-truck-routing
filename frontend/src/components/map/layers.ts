@@ -1,4 +1,4 @@
-import type { ExpressionSpecification } from "maplibre-gl";
+import type { ExpressionSpecification, RasterLayerSpecification } from "maplibre-gl";
 import type { LayerProps } from "react-map-gl/maplibre";
 import { LEVELS, UNKNOWN, UNKNOWN_DIGIT } from "../../utils/risk";
 
@@ -97,22 +97,13 @@ export const clusterCounts: LayerProps = {
   paint: { "text-color": "#ffffff", "text-halo-color": "#0b1620", "text-halo-width": 1.5 },
 };
 
-/** Risk at the slider hour, from each cell's feature state; Low cells stay clear. */
-export function riskGrid(focus: number | null): LayerProps {
-  const level: ExpressionSpecification = ["coalesce", ["feature-state", "r"], 0];
-  return {
-    id: "risk-grid",
-    type: "fill",
-    paint: {
-      "fill-color": levelColor(level, "rgba(0, 0, 0, 0)"),
-      "fill-opacity":
-        focus === null
-          ? ["match", level, 0, 0, 0.42]
-          : ["case", ["==", level, focus], 0.6, 0],
-      "fill-outline-color": "rgba(0, 0, 0, 0)",
-    },
-  };
-}
+/** The smooth risk curves, drawn opaque on a canvas and shown here at one opacity. */
+export const riskAreas: RasterLayerSpecification = {
+  id: "risk-areas",
+  type: "raster",
+  source: "grid",
+  paint: { "raster-opacity": 0.45, "raster-fade-duration": 0 },
+};
 
 export function truckDots(selected: number): LayerProps {
   return {
