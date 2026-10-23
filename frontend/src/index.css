@@ -195,3 +195,21 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
   .slider { bottom: 34px; }
   .route-card dl { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Base map colour switcher (top-right, left of the zoom buttons) */
+.basemap-switcher {
+  position: absolute; top: 10px; right: 52px; z-index: 2; display: flex; gap: 2px; padding: 3px;
+  background: rgb(19 43 60 / 0.92); border: 1px solid var(--border); border-radius: 8px;
+}
+.basemap-switcher button {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); font: 12px system-ui, sans-serif; cursor: pointer;
+}
+.basemap-switcher button.active { background: var(--accent-soft); color: var(--accent); }
+.swatch { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.35); }
+.swatch-navy { background: #1c3a4f; }
+.swatch-dark { background: #0c0c0c; }
+.swatch-light { background: #f2f2f2; }
+@media (max-width: 800px) {
+  .basemap-switcher { top: auto; bottom: 120px; right: 10px; }
+}

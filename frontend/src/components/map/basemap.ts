@@ -1,6 +1,30 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-export const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
+const STYLES = "https://tiles.openfreemap.org/styles";
+
+export type BasemapId = "navy" | "dark" | "light";
+
+interface Basemap {
+  label: string;
+  url: string;
+  labelLayer: string; // first place-name layer: the risk grid is drawn beneath it
+  casing: string; // outline around route lines
+}
+
+export const BASEMAPS: Record<BasemapId, Basemap> = {
+  // Same tiles as "dark"; the fragment makes it a distinct style so switching reloads it.
+  navy: { label: "Navy", url: `${STYLES}/dark#navy`, labelLayer: "water_name", casing: "#0b1620" },
+  dark: { label: "Dark", url: `${STYLES}/dark`, labelLayer: "water_name", casing: "#000000" },
+  light: {
+    label: "Light",
+    url: `${STYLES}/positron`,
+    labelLayer: "waterway_line_label",
+    casing: "#ffffff",
+  },
+};
+
+export const isBasemap = (value: unknown): value is BasemapId =>
+  typeof value === "string" && value in BASEMAPS;
 
 /** Recolours OpenFreeMap's near-black "dark" style to the app's navy palette. */
 const NAVY_PAINT: Record<string, Record<string, string>> = {

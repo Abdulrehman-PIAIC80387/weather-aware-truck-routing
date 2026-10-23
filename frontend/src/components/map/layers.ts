@@ -15,12 +15,14 @@ const isSelected = (selected: number): ExpressionSpecification => [
   selected,
 ];
 
-export const routeCasing: LayerProps = {
-  id: "route-casing",
-  type: "line",
-  layout: { "line-join": "round", "line-cap": "round" },
-  paint: { "line-color": "#0b1620", "line-width": 9 },
-};
+export function routeCasing(color: string): LayerProps {
+  return {
+    id: "route-casing",
+    type: "line",
+    layout: { "line-join": "round", "line-cap": "round" },
+    paint: { "line-color": color, "line-width": 9 },
+  };
+}
 
 export function routeLines(selected: number): LayerProps {
   return {

@@ -15,7 +15,7 @@ import type { Plan } from "../../types/plan";
 import { formatDuration, formatMiles, formatTime } from "../../utils/format";
 import { levelInfo } from "../../utils/risk";
 import { Legend } from "../Legend";
-import { MAP_STYLE, applyNavyBasemap } from "./basemap";
+import { BASEMAPS, type BasemapId, applyNavyBasemap } from "./basemap";
 import { bounds, checkpointPoints, gridCells, midpoint, routeSegments, truckPositions } from "./geojson";
 import {
   INTERACTIVE_LAYERS,
@@ -30,6 +30,7 @@ const CONTIGUOUS_US = { longitude: -98.35, latitude: 39.5, zoom: 3.6 };
 
 interface RouteMapProps {
   plan: Plan | null;
+  basemap: BasemapId;
   selected: number;
   onSelect: (route: number) => void;
 }
@@ -45,13 +46,14 @@ interface Picked {
 }
 
 export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function RouteMap(
-  { plan, selected, onSelect },
+  { plan, basemap, selected, onSelect },
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
   const hourRef = useRef(0);
   const [loaded, setLoaded] = useState(false);
-  const [labelLayer, setLabelLayer] = useState<string>(); // grid goes beneath place names
+  const basemapRef = useRef(basemap);
+  basemapRef.current = basemap;
   const [hovered, setHovered] = useState<Picked | null>(null);
   const [opened, setOpened] = useState<Picked | null>(null);
 
@@ -60,6 +62,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const grid = useMemo(() => plan && gridCells(plan), [plan]);
   const trucks = useMemo(() => plan && truckPositions(plan, 0), [plan]);
   const checkpoints = useMemo(() => plan && checkpointPoints(plan), [plan]);
+  const casingLayer = useMemo(() => routeCasing(BASEMAPS[basemap].casing), [basemap]);
   const routeLayer = useMemo(() => routeLines(selected), [selected]);
   const checkpointLayer = useMemo(() => checkpointCircles(selected), [selected]);
   const truckLayer = useMemo(() => truckDots(selected), [selected]);
@@ -129,12 +132,16 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
     <Map
       ref={mapRef}
       initialViewState={CONTIGUOUS_US}
-      mapStyle={MAP_STYLE}
+      mapStyle={BASEMAPS[basemap].url}
+      styleDiffing={false}
       interactiveLayerIds={INTERACTIVE_LAYERS}
       cursor={hovered ? "pointer" : "grab"}
       onLoad={(event) => {
-        applyNavyBasemap(event.target);
-        setLabelLayer(event.target.getStyle().layers.find((layer) => layer.type === "symbol")?.id);
+        // A base map change reloads the style; react-map-gl re-adds our layers after it.
+        const map = event.target;
+        const recolour = () => basemapRef.current === "navy" && applyNavyBasemap(map);
+        map.on("style.load", recolour);
+        recolour();
         setLoaded(true);
       }}
       onClick={handleClick}
@@ -145,13 +152,15 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       <ScaleControl position="bottom-left" unit="metric" maxWidth={120} />
       <ScaleControl position="bottom-left" unit="imperial" maxWidth={120} />
       {grid && (
-        <Source id="grid" type="geojson" data={grid}>
-          <Layer {...riskGrid} beforeId={labelLayer} />
+        // Remounted per base map: its label layer id differs, so the grid is re-added
+        // beneath the new labels once the new style has loaded instead of moved early.
+        <Source key={basemap} id="grid" type="geojson" data={grid}>
+          <Layer {...riskGrid} beforeId={BASEMAPS[basemap].labelLayer} />
         </Source>
       )}
       {segments && (
         <Source id="routes" type="geojson" data={segments}>
-          <Layer {...routeCasing} />
+          <Layer {...casingLayer} />
           <Layer {...routeLayer} />
         </Source>
       )}

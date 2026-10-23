@@ -4,8 +4,11 @@ import { HeatmapSlider } from "./components/HeatmapSlider";
 import { PlanForm } from "./components/PlanForm";
 import { RouteCards } from "./components/RouteCards";
 import { SiteHeader } from "./components/SiteHeader";
+import { BasemapSwitcher } from "./components/map/BasemapSwitcher";
+import { isBasemap } from "./components/map/basemap";
 import { UnsafeBanner } from "./components/UnsafeBanner";
 import { RouteMap, type RouteMapHandle } from "./components/map/RouteMap";
+import { usePersistentState } from "./hooks/usePersistentState";
 import { usePlan } from "./hooks/usePlan";
 
 export default function App() {
@@ -13,6 +16,7 @@ export default function App() {
   const plan = state.status === "success" ? state.plan : null;
   const [selected, setSelected] = useState(0);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [basemap, setBasemap] = usePersistentState("basemap", "navy", isBasemap);
   const map = useRef<RouteMapHandle>(null);
   const setHour = useCallback((hour: number) => map.current?.setHour(hour), []);
 
@@ -65,7 +69,14 @@ export default function App() {
           >
             {panelOpen ? "‹" : "›"}
           </button>
-          <RouteMap ref={map} plan={plan} selected={selected} onSelect={setSelected} />
+          <RouteMap
+            ref={map}
+            plan={plan}
+            basemap={basemap}
+            selected={selected}
+            onSelect={setSelected}
+          />
+          <BasemapSwitcher value={basemap} onChange={setBasemap} />
           {plan && <HeatmapSlider departure={plan.departure} onChange={setHour} />}
         </main>
       </div>
