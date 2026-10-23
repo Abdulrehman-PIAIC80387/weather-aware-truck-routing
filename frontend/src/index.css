@@ -227,7 +227,7 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
 .basemap-switcher button.active { background: var(--accent-soft); color: var(--accent); }
 .swatch { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.35); }
 .swatch-navy { background: #1c3a4f; }
-.swatch-dark { background: #0c0c0c; }
+.swatch-dark { background: #2a2e33; }
 .swatch-light { background: #f2f2f2; }
 @media (max-width: 800px) {
   .basemap-switcher { display: none; } /* phones use the navbar icon instead */

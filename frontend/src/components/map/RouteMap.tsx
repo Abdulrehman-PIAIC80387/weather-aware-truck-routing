@@ -16,7 +16,7 @@ import type { Plan } from "../../types/plan";
 import { formatDuration, formatMiles, formatTime } from "../../utils/format";
 import { levelInfo } from "../../utils/risk";
 import { Legend } from "../Legend";
-import { BASEMAPS, type BasemapId, applyNavyBasemap } from "./basemap";
+import { BASEMAPS, type BasemapId, applyPalette } from "./basemap";
 import {
   bounds,
   checkpointPoints,
@@ -66,6 +66,10 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const [loaded, setLoaded] = useState(false);
   const basemapRef = useRef(basemap);
   basemapRef.current = basemap;
+  const recolourRef = useRef<() => void>();
+
+  // Navy <-> Dark keep the same style URL, so no style reload: repaint here instead.
+  useEffect(() => recolourRef.current?.(), [basemap]);
   const [hovered, setHovered] = useState<Picked | null>(null);
   const [pointer, setPointer] = useState(false);
   const [focus, setFocus] = useState<number | null>(null); // legend level shown alone
@@ -201,7 +205,11 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
         // Narrow maps start with the credits expanded over the scale bars; start them
         // collapsed to the (i) button, which still opens them.
         map.getContainer().querySelector(".maplibregl-compact")?.classList.remove("maplibregl-compact-show");
-        const recolour = () => basemapRef.current === "navy" && applyNavyBasemap(map);
+        const recolour = () => {
+          const { palette } = BASEMAPS[basemapRef.current];
+          if (palette) applyPalette(map, palette);
+        };
+        recolourRef.current = recolour;
         map.on("style.load", recolour);
         recolour();
         setLoaded(true);
