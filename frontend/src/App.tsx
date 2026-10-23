@@ -11,6 +11,8 @@ import { RouteMap, type RouteMapHandle } from "./components/map/RouteMap";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { usePlan } from "./hooks/usePlan";
 
+const MOBILE = "(max-width: 800px)"; // keep in sync with index.css
+
 export default function App() {
   const { state, requestPlan } = usePlan();
   const plan = state.status === "success" ? state.plan : null;
@@ -21,14 +23,25 @@ export default function App() {
   const setHour = useCallback((hour: number) => map.current?.setHour(hour), []);
 
   useEffect(() => {
-    if (plan) setSelected(plan.recommended);
+    if (!plan) return;
+    setSelected(plan.recommended);
+    if (window.matchMedia(MOBILE).matches) setPanelOpen(false); // show the routes
   }, [plan]);
 
   return (
     <div className="app">
-      <SiteHeader />
+      <SiteHeader panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
       <div className={`layout ${panelOpen ? "" : "panel-closed"}`}>
-        <aside className="panel" hidden={!panelOpen}>
+        <div className="drawer-backdrop" onClick={() => setPanelOpen(false)} />
+        <aside className="panel" aria-label="Route planner">
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={() => setPanelOpen(false)}
+            aria-label="Close panel"
+          >
+            ✕
+          </button>
           <header>
             <h1>Weather-Aware Truck Routing</h1>
             <p className="muted">

@@ -3,7 +3,12 @@ import { LogoMark } from "./LogoMark";
 
 const REPO_URL = "https://github.com/Abdulrehman-PIAIC80387/weather-aware-truck-routing";
 
-export function SiteHeader() {
+interface SiteHeaderProps {
+  panelOpen: boolean;
+  onTogglePanel: () => void;
+}
+
+export function SiteHeader({ panelOpen, onTogglePanel }: SiteHeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href="/">
@@ -21,6 +26,15 @@ export function SiteHeader() {
           API docs
         </a>
       </nav>
+      {/* Mobile only: the planner panel opens as a drawer from here */}
+      <button
+        type="button"
+        className="drawer-button"
+        onClick={onTogglePanel}
+        aria-expanded={panelOpen}
+      >
+        {panelOpen ? "✕ Close" : "☰ Plan route"}
+      </button>
       <a className="header-button" href={REPO_URL} target="_blank" rel="noreferrer">
         GitHub repo
       </a>
