@@ -7,7 +7,7 @@ and travel time. Enter an origin, destination, departure time and load weight. T
 - checks the forecast at every checkpoint **for the time the truck will be there**;
 - rates each checkpoint with the assessment's risk and load rules;
 - recommends the best route;
-- draws everything on a map, with a **0–48 hour weather risk grid** and a time slider.
+- draws everything on a map, with **0–48 hour weather risk areas** and a time slider.
 
 - **Backend:** Django 6 + Django REST Framework, OpenAPI docs (Swagger / ReDoc)
 - **Frontend:** React 18 + TypeScript + Vite + MapLibre GL (WebGL), served by nginx
@@ -15,6 +15,39 @@ and travel time. Enter an origin, destination, departure time and load weight. T
   [Open-Meteo](https://open-meteo.com) (forecast, no key) ·
   [Photon](https://photon.komoot.io) (place search, no key) ·
   [OpenFreeMap](https://openfreemap.org) (map tiles, no key)
+
+## Features
+
+**Planning**
+- 3 distinct truck routes from TomTom's truck mode, routed for the truck's gross weight.
+- Weather checkpoints every **10, 25 or 50 miles**, each rated with the forecast for
+  the time the truck reaches it.
+- Risk levels from the assessment's table and load rules. Missing forecasts show as
+  **Unknown**, never Low.
+- The recommended route, with a one-line reason ("Fewest Severe miles (0 vs 42)").
+- A **"No route is safe at this departure"** banner when even the best route has Severe
+  or No Travel miles.
+
+**Map**
+- Routes coloured by risk along each stretch. Click a route line or a card to select it.
+- Checkpoints show the ETA and level on hover, and wind, gusts, rain, snow and the
+  reason for the level on click.
+- On-map route labels (time, severe miles, ★ Recommended) and an arrival-time marker.
+- **Smooth weather risk areas** for 0–48 h after departure, with a time slider, a
+  **Play** button, and truck dots showing where each truck is at that hour.
+- **Clickable legend:** pick a level to show only its areas, route stretches and
+  checkpoints, and zoom to them. Levels absent from the trip are greyed out.
+- **Checkpoint clusters** when zoomed out, counted and coloured by their worst level.
+  Click a cluster to zoom in.
+- **Base map switcher** (Navy / Dark / Light). The choice is remembered in the browser.
+- **Scale bars** in kilometres and miles.
+
+**Interface**
+- Dark navy and teal theme with a site header. The date-time picker matches the theme.
+- US place search with type-ahead suggestions (Photon).
+- **Collapsible side panel:** hide it to give the map the full width; your inputs are kept.
+- Mobile layout: the map stays on top and the panel scrolls below it.
+- Loading and error states, and a new search cancels the one in flight.
 
 ## Quick start
 
@@ -109,6 +142,12 @@ Identical requests are served from a 1-hour cache.
 4. **Risk** at each checkpoint (rules below). If the forecast is missing, the level is
    **Unknown** — never Low.
 5. **Recommendation** (rules below).
+6. **Display.**
+   - The response carries every route as risk-coloured stretches, every checkpoint and
+     the 0–48 h risk for each forecast cell.
+   - The browser traces the cells into smooth risk areas for each slider hour.
+   - Moving the slider, filtering by legend level or switching base maps makes no
+     further API calls.
 
 ### Risk rules
 
