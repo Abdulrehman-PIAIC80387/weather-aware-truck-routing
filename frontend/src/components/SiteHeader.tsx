@@ -1,14 +1,18 @@
 import { API_BASE } from "../api";
 import { LogoMark } from "./LogoMark";
+import { BasemapIconButton } from "./map/BasemapIconButton";
+import type { BasemapId } from "./map/basemap";
 
 const REPO_URL = "https://github.com/Abdulrehman-PIAIC80387/weather-aware-truck-routing";
 
 interface SiteHeaderProps {
   panelOpen: boolean;
   onTogglePanel: () => void;
+  basemap: BasemapId;
+  onBasemapChange: (basemap: BasemapId) => void;
 }
 
-export function SiteHeader({ panelOpen, onTogglePanel }: SiteHeaderProps) {
+export function SiteHeader({ panelOpen, onTogglePanel, basemap, onBasemapChange }: SiteHeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href="/">
@@ -26,7 +30,8 @@ export function SiteHeader({ panelOpen, onTogglePanel }: SiteHeaderProps) {
           API docs
         </a>
       </nav>
-      {/* Mobile only: the planner panel opens as a drawer from here */}
+      {/* Mobile only: map colour icon and the planner drawer's single open/close button */}
+      <BasemapIconButton value={basemap} onChange={onBasemapChange} />
       <button
         type="button"
         className="drawer-button"

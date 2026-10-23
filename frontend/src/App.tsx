@@ -17,7 +17,8 @@ export default function App() {
   const { state, requestPlan } = usePlan();
   const plan = state.status === "success" ? state.plan : null;
   const [selected, setSelected] = useState(0);
-  const [panelOpen, setPanelOpen] = useState(true);
+  // Phones start with the planner drawer closed so the map shows first.
+  const [panelOpen, setPanelOpen] = useState(() => !window.matchMedia(MOBILE).matches);
   const [basemap, setBasemap] = usePersistentState("basemap", "navy", isBasemap);
   const map = useRef<RouteMapHandle>(null);
   const setHour = useCallback((hour: number) => map.current?.setHour(hour), []);
@@ -30,18 +31,15 @@ export default function App() {
 
   return (
     <div className="app">
-      <SiteHeader panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(!panelOpen)} />
+      <SiteHeader
+        panelOpen={panelOpen}
+        onTogglePanel={() => setPanelOpen(!panelOpen)}
+        basemap={basemap}
+        onBasemapChange={setBasemap}
+      />
       <div className={`layout ${panelOpen ? "" : "panel-closed"}`}>
         <div className="drawer-backdrop" onClick={() => setPanelOpen(false)} />
         <aside className="panel" aria-label="Route planner">
-          <button
-            type="button"
-            className="drawer-close"
-            onClick={() => setPanelOpen(false)}
-            aria-label="Close panel"
-          >
-            ✕
-          </button>
           <header>
             <h1>Weather-Aware Truck Routing</h1>
             <p className="muted">
