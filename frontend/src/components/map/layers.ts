@@ -19,7 +19,7 @@ export const routeCasing: LayerProps = {
   id: "route-casing",
   type: "line",
   layout: { "line-join": "round", "line-cap": "round" },
-  paint: { "line-color": "#ffffff", "line-width": 9 },
+  paint: { "line-color": "#0b1620", "line-width": 9 },
 };
 
 export function routeLines(selected: number): LayerProps {
@@ -46,7 +46,7 @@ export function checkpointCircles(selected: number): LayerProps {
     paint: {
       "circle-color": levelColor(["get", "level"]),
       "circle-radius": ["case", isSelected(selected), 5, 3],
-      "circle-stroke-color": "#1f2937",
+      "circle-stroke-color": "#0b1620",
       "circle-stroke-width": ["case", isSelected(selected), 1.5, 0.5],
       "circle-opacity": ["case", isSelected(selected), 1, 0.5],
     },

@@ -3,6 +3,7 @@ import { CheckpointList } from "./components/CheckpointList";
 import { HeatmapSlider } from "./components/HeatmapSlider";
 import { PlanForm } from "./components/PlanForm";
 import { RouteCards } from "./components/RouteCards";
+import { SiteHeader } from "./components/SiteHeader";
 import { UnsafeBanner } from "./components/UnsafeBanner";
 import { RouteMap, type RouteMapHandle } from "./components/map/RouteMap";
 import { usePlan } from "./hooks/usePlan";
@@ -20,54 +21,54 @@ export default function App() {
   }, [plan]);
 
   return (
-    <div className={`layout ${panelOpen ? "" : "panel-closed"}`}>
-      <aside className="panel" hidden={!panelOpen}>
-        <header>
-          <h1>Weather-Aware Truck Routing</h1>
-          <p className="muted">
-            Three truck routes, weather risk at each checkpoint's ETA, and the safest pick.{" "}
-            <a href="/api/docs/" target="_blank" rel="noreferrer">
-              API docs
-            </a>
-          </p>
-        </header>
-        <PlanForm isLoading={state.status === "loading"} onSubmit={requestPlan} />
+    <div className="app">
+      <SiteHeader />
+      <div className={`layout ${panelOpen ? "" : "panel-closed"}`}>
+        <aside className="panel" hidden={!panelOpen}>
+          <header>
+            <h1>Weather-Aware Truck Routing</h1>
+            <p className="muted">
+              Three truck routes, weather risk at each checkpoint's ETA, and the safest pick.
+            </p>
+          </header>
+          <PlanForm isLoading={state.status === "loading"} onSubmit={requestPlan} />
 
-        {state.status === "loading" && (
-          <div className="loading" aria-live="polite">
-            <span className="spinner" /> Routing and checking the forecast along each route…
-          </div>
-        )}
-        {state.status === "error" && (
-          <p className="error" role="alert">
-            {state.message}
-          </p>
-        )}
-        {plan && (
-          <>
-            {plan.unsafe && <UnsafeBanner />}
-            <h2>Routes</h2>
-            <RouteCards plan={plan} selected={selected} onSelect={setSelected} />
-            {plan.routes[selected] && (
-              <CheckpointList route={plan.routes[selected]} intervalMiles={plan.interval_miles} />
-            )}
-          </>
-        )}
-      </aside>
-      <main className="map-area">
-        <button
-          type="button"
-          className="panel-toggle"
-          onClick={() => setPanelOpen(!panelOpen)}
-          aria-expanded={panelOpen}
-          aria-label={panelOpen ? "Hide side panel" : "Show side panel"}
-          title={panelOpen ? "Hide side panel" : "Show side panel"}
-        >
-          {panelOpen ? "‹" : "›"}
-        </button>
-        <RouteMap ref={map} plan={plan} selected={selected} onSelect={setSelected} />
-        {plan && <HeatmapSlider departure={plan.departure} onChange={setHour} />}
-      </main>
+          {state.status === "loading" && (
+            <div className="loading" aria-live="polite">
+              <span className="spinner" /> Routing and checking the forecast along each route…
+            </div>
+          )}
+          {state.status === "error" && (
+            <p className="error" role="alert">
+              {state.message}
+            </p>
+          )}
+          {plan && (
+            <>
+              {plan.unsafe && <UnsafeBanner />}
+              <h2>Routes</h2>
+              <RouteCards plan={plan} selected={selected} onSelect={setSelected} />
+              {plan.routes[selected] && (
+                <CheckpointList route={plan.routes[selected]} intervalMiles={plan.interval_miles} />
+              )}
+            </>
+          )}
+        </aside>
+        <main className="map-area">
+          <button
+            type="button"
+            className="panel-toggle"
+            onClick={() => setPanelOpen(!panelOpen)}
+            aria-expanded={panelOpen}
+            aria-label={panelOpen ? "Hide side panel" : "Show side panel"}
+            title={panelOpen ? "Hide side panel" : "Show side panel"}
+          >
+            {panelOpen ? "‹" : "›"}
+          </button>
+          <RouteMap ref={map} plan={plan} selected={selected} onSelect={setSelected} />
+          {plan && <HeatmapSlider departure={plan.departure} onChange={setHour} />}
+        </main>
+      </div>
     </div>
   );
 }

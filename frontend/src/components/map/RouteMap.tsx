@@ -25,7 +25,7 @@ import {
   truckDots,
 } from "./layers";
 
-const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 const CONTIGUOUS_US = { longitude: -98.35, latitude: 39.5, zoom: 3.6 };
 
 interface RouteMapProps {
