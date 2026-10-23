@@ -198,6 +198,9 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       onLoad={(event) => {
         // A base map change reloads the style; react-map-gl re-adds our layers after it.
         const map = event.target;
+        // Narrow maps start with the credits expanded over the scale bars; start them
+        // collapsed to the (i) button, which still opens them.
+        map.getContainer().querySelector(".maplibregl-compact")?.classList.remove("maplibregl-compact-show");
         const recolour = () => basemapRef.current === "navy" && applyNavyBasemap(map);
         map.on("style.load", recolour);
         recolour();
