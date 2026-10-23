@@ -34,7 +34,7 @@ export function routeLines(selected: number): LayerProps {
     paint: {
       "line-color": levelColor(["get", "level"]),
       "line-width": ["case", isSelected(selected), 6, 3],
-      "line-opacity": ["case", isSelected(selected), 1, 0.45],
+      "line-opacity": ["case", isSelected(selected), 1, 0.65],
     },
   };
 }

@@ -15,6 +15,7 @@ import type { Plan } from "../../types/plan";
 import { formatDuration, formatMiles, formatTime } from "../../utils/format";
 import { levelInfo } from "../../utils/risk";
 import { Legend } from "../Legend";
+import { MAP_STYLE, applyNavyBasemap } from "./basemap";
 import { bounds, checkpointPoints, gridCells, midpoint, routeSegments, truckPositions } from "./geojson";
 import {
   INTERACTIVE_LAYERS,
@@ -25,7 +26,6 @@ import {
   truckDots,
 } from "./layers";
 
-const MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 const CONTIGUOUS_US = { longitude: -98.35, latitude: 39.5, zoom: 3.6 };
 
 interface RouteMapProps {
@@ -133,6 +133,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       interactiveLayerIds={INTERACTIVE_LAYERS}
       cursor={hovered ? "pointer" : "grab"}
       onLoad={(event) => {
+        applyNavyBasemap(event.target);
         setLabelLayer(event.target.getStyle().layers.find((layer) => layer.type === "symbol")?.id);
         setLoaded(true);
       }}
