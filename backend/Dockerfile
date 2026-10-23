@@ -31,4 +31,5 @@ EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]
 # --preload imports the app once before forking, so no worker serves a cold first request
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "60", "--preload"]
+# PORT is set by hosts such as Render; docker compose uses the 8000 default.
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 60 --preload"]

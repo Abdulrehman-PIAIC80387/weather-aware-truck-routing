@@ -4,8 +4,11 @@ import type { Place, Plan, PlanRequest } from "./types/plan";
 const PHOTON_URL = "https://photon.komoot.io/api/";
 const US_BBOX = "-125,24.3,-66.8,49.5"; // contiguous US, the area the API accepts
 
+/** Backend origin when it is hosted separately (e.g. Render); empty means same origin. */
+export const API_BASE = import.meta.env.VITE_API_BASE ?? "";
+
 export async function planTrip(request: PlanRequest, signal: AbortSignal): Promise<Plan> {
-  const response = await fetch("/api/routes/plan/", {
+  const response = await fetch(`${API_BASE}/api/routes/plan/`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({

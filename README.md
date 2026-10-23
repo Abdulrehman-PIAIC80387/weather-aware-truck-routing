@@ -66,6 +66,34 @@ docker compose up --build
 
 Ports come from `.env` (`BACKEND_PORT`, `FRONTEND_PORT`).
 
+## Deploy to Render (free)
+
+[`render.yaml`](render.yaml) is a Render Blueprint for two free services:
+
+| Service | Type | URL |
+|---------|------|-----|
+| `weather-aware-truck-routing-api` | Web service (Docker, `backend/Dockerfile`) | `https://weather-aware-truck-routing-api.onrender.com` |
+| `weather-aware-truck-routing` | Static site (`frontend`, Vite build) | `https://weather-aware-truck-routing.onrender.com` |
+
+1. Push the repo to GitHub.
+2. In Render: **New → Blueprint**, then pick this repository.
+3. Enter `TOMTOM_API_KEY` when asked. Every other setting comes from the Blueprint:
+   `DJANGO_DEBUG=0`, a generated `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS=.onrender.com`,
+   and CORS for the static site.
+4. **Check the URLs.** If Render gives a service a different subdomain (the name was
+   taken), set `VITE_API_BASE` on the static site and `CORS_ALLOWED_ORIGINS` on the API to
+   the real URLs, then redeploy both.
+
+The frontend calls the API directly at `VITE_API_BASE` (set at build time); the backend
+allows that origin through CORS.
+
+**Free-tier behaviour:**
+- The API sleeps after 15 minutes without traffic, so the first plan after a pause takes
+  about a minute while it wakes up.
+- Its file cache resets on every restart.
+- Open-Meteo's limit is per IP, and Render's outbound IPs are shared, so a busy period
+  can return "weather service busy".
+
 ## API
 
 `POST /api/routes/plan/`

@@ -1,3 +1,4 @@
+import { API_BASE } from "../api";
 import { LogoMark } from "./LogoMark";
 
 const REPO_URL = "https://github.com/Abdulrehman-PIAIC80387/weather-aware-truck-routing";
@@ -16,7 +17,7 @@ export function SiteHeader() {
         <a href={`${REPO_URL}#how-it-works`} target="_blank" rel="noreferrer">
           How it works
         </a>
-        <a href="/api/docs/" target="_blank" rel="noreferrer">
+        <a href={`${API_BASE}/api/docs/`} target="_blank" rel="noreferrer">
           API docs
         </a>
       </nav>
