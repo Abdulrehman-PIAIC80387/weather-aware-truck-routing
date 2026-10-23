@@ -43,7 +43,7 @@ class Forecast:
         """Conditions at `when`, or None outside the forecast or when values are missing."""
         offset = (when - self.start) / HOUR
         lower, upper = math.floor(offset), math.ceil(offset)
-        if lower < 0 or upper >= len(self.hourly["wind_speed_10m"]):
+        if lower < 0 or upper >= min(len(self.hourly.get(name, [])) for name in VARIABLES):
             return None
         wind = self.hourly["wind_speed_10m"]
         ending = {name: self.hourly[name][upper] for name in VARIABLES[1:]}
@@ -55,6 +55,14 @@ class Forecast:
             rain_in_hr=ending["rain"] + ending["showers"],
             snow_in_hr=ending["snowfall"],
         )
+
+
+def parse_hourly(data: dict) -> dict[str, list[float | None]]:
+    """Open-Meteo hourly arrays sent by a client, reduced to the variables we use."""
+    return {
+        name: [None if value is None else float(value) for value in data.get(name, [])]
+        for name in VARIABLES
+    }
 
 
 def get_forecasts(points: list[tuple[float, float]], start: datetime, end: datetime) -> list:

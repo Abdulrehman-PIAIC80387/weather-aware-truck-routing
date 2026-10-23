@@ -90,6 +90,42 @@ class PlanViewTests(TestCase):
         self.assertIn("detail", response.json())
 
 
+@override_settings(CACHES=MEMORY_CACHE)
+@patch("routes.planner.get_forecasts")
+@patch("routes.planner.get_routes")
+class BrowserWeatherTests(TestCase):
+    """The two-step flow where the browser fetches Open-Meteo with its own quota."""
+
+    def setUp(self):
+        cache.clear()
+
+    def post(self, name, **extra):
+        departure = (timezone.now() + timedelta(hours=2)).isoformat()
+        body = {"origin": CHICAGO, "destination": DENVER, "departure": departure}
+        body |= {"load_lb": 42_000, "interval": 25} | extra
+        return self.client.post(reverse(name), body, content_type="application/json")
+
+    def test_points_then_plan_with_browser_forecasts(self, get_routes, get_forecasts):
+        get_routes.return_value = [straight(100, 2, 40.0)]
+        window = self.post("weather-points").json()
+        self.assertEqual(len(window["start_hour"]), 16)  # Open-Meteo's yyyy-mm-ddThh:mm
+        hours = 60
+        stormy = {"wind_speed_10m": [50.0] * hours, "wind_gusts_10m": [60.0] * hours}
+        stormy |= {name: [0.0] * hours for name in ("rain", "showers", "snowfall")}
+
+        response = self.post("plan", hourly=[stormy] * len(window["points"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["unsafe"])  # 50 mph + 42,000 lb is No Travel
+        get_forecasts.assert_not_called()  # the server never called Open-Meteo
+        self.assertEqual(get_routes.call_count, 1)  # routes were cached between the steps
+
+    def test_wrong_number_of_forecasts_is_rejected(self, get_routes, _):
+        get_routes.return_value = [straight(100, 2, 40.0)]
+        response = self.post("plan", hourly=[{}])
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("hourly", response.json())
+
+
 class SimplifyTests(TestCase):
     def test_drops_points_on_a_straight_line_and_keeps_corners(self):
         line = [(0.0, i / 10) for i in range(11)] + [(1.0, 1.0)]

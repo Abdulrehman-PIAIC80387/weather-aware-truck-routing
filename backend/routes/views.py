@@ -7,8 +7,24 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .planner import plan_trip
+from .planner import plan_trip, weather_points
 from .serializers import PlanRequestSerializer
+
+
+def _validated(request) -> dict:
+    serializer = PlanRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data
+
+
+@extend_schema(
+    summary="Forecast points and time window for a trip, for the browser to fetch",
+    request=PlanRequestSerializer,
+    responses=OpenApiTypes.OBJECT,
+)
+@api_view(["POST"])
+def points(request):
+    return Response(weather_points(**_validated(request)))
 
 
 @extend_schema(
@@ -18,10 +34,9 @@ from .serializers import PlanRequestSerializer
 )
 @api_view(["POST"])
 def plan(request):
-    serializer = PlanRequestSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    data = serializer.validated_data
-    key = "plan:" + hashlib.sha256(repr(sorted(data.items())).encode()).hexdigest()
+    data = _validated(request)
+    trip = {name: value for name, value in data.items() if name != "hourly"}
+    key = "plan:" + hashlib.sha256(repr(sorted(trip.items())).encode()).hexdigest()
     result = cache.get(key)
     if result is None:
         result = plan_trip(**data)

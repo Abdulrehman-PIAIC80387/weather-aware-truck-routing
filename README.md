@@ -91,8 +91,12 @@ allows that origin through CORS.
 - The API sleeps after 15 minutes without traffic, so the first plan after a pause takes
   about a minute while it wakes up.
 - Its file cache resets on every restart.
-- Open-Meteo's limit is per IP, and Render's outbound IPs are shared, so a busy period
-  can return "weather service busy".
+- Open-Meteo's free limit is per IP, and Render's outbound IPs are shared and often
+  limited. So the **browser fetches the forecasts**, using each visitor's own quota:
+  `POST /api/routes/weather-points/` lists the forecast points, the browser downloads
+  them from Open-Meteo, and `POST /api/routes/plan/` receives them as `hourly`. All risk
+  and ranking logic still runs in Python. Without `hourly`, `/plan/` fetches the
+  weather itself (e.g. from curl or Swagger).
 
 ## API
 

@@ -31,6 +31,11 @@ class PlanRequestSerializer(serializers.Serializer):
     departure = serializers.DateTimeField(help_text="ISO 8601 with a UTC offset")
     load_lb = serializers.IntegerField(min_value=0, max_value=80_000)
     interval = serializers.ChoiceField(choices=[10, 25, 50], help_text="Checkpoint spacing, miles")
+    hourly = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        help_text="Optional: Open-Meteo hourly data for each point from weather-points",
+    )
 
     def validate_departure(self, value):
         now = timezone.now()
