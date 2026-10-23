@@ -1,14 +1,12 @@
+import { LogoMark } from "./LogoMark";
+
 const REPO_URL = "https://github.com/Abdulrehman-PIAIC80387/weather-aware-truck-routing";
 
 export function SiteHeader() {
   return (
     <header className="site-header">
       <a className="brand" href="/">
-        <span className="brand-mark" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
+        <LogoMark />
         weather-aware routing
       </a>
       <nav className="site-nav" aria-label="Main">
