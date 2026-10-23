@@ -17,7 +17,7 @@ export function SiteHeader({ panelOpen, onTogglePanel, basemap, onBasemapChange 
     <header className="site-header">
       <a className="brand" href="/">
         <LogoMark />
-        weather-aware routing
+        <span className="brand-name">weather-aware routing</span>
       </a>
       <nav className="site-nav" aria-label="Main">
         <a className="active" href="/">
