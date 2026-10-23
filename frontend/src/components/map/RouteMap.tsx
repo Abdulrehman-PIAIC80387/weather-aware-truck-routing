@@ -7,6 +7,7 @@ import Map, {
   type MapRef,
   Marker,
   NavigationControl,
+  ScaleControl,
   Popup,
   Source,
 } from "react-map-gl/maplibre";
@@ -140,6 +141,8 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       onMouseLeave={() => setHovered(null)}
     >
       <NavigationControl position="top-right" showCompass={false} />
+      <ScaleControl position="bottom-left" unit="metric" maxWidth={120} />
+      <ScaleControl position="bottom-left" unit="imperial" maxWidth={120} />
       {grid && (
         <Source id="grid" type="geojson" data={grid}>
           <Layer {...riskGrid} beforeId={labelLayer} />

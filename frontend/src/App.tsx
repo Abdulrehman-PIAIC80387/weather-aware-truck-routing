@@ -11,6 +11,7 @@ export default function App() {
   const { state, requestPlan } = usePlan();
   const plan = state.status === "success" ? state.plan : null;
   const [selected, setSelected] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(true);
   const map = useRef<RouteMapHandle>(null);
   const setHour = useCallback((hour: number) => map.current?.setHour(hour), []);
 
@@ -19,8 +20,8 @@ export default function App() {
   }, [plan]);
 
   return (
-    <div className="layout">
-      <aside className="panel">
+    <div className={`layout ${panelOpen ? "" : "panel-closed"}`}>
+      <aside className="panel" hidden={!panelOpen}>
         <header>
           <h1>Weather-Aware Truck Routing</h1>
           <p className="muted">
@@ -54,6 +55,16 @@ export default function App() {
         )}
       </aside>
       <main className="map-area">
+        <button
+          type="button"
+          className="panel-toggle"
+          onClick={() => setPanelOpen(!panelOpen)}
+          aria-expanded={panelOpen}
+          aria-label={panelOpen ? "Hide side panel" : "Show side panel"}
+          title={panelOpen ? "Hide side panel" : "Show side panel"}
+        >
+          {panelOpen ? "‹" : "›"}
+        </button>
         <RouteMap ref={map} plan={plan} selected={selected} onSelect={setSelected} />
         {plan && <HeatmapSlider departure={plan.departure} onChange={setHour} />}
       </main>

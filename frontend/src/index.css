@@ -192,3 +192,21 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
   .slider { bottom: 34px; }
   .route-card dl { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Collapsible side panel; MapLibre resizes itself when its container changes. */
+.layout.panel-closed { grid-template-columns: 1fr; }
+.panel[hidden] { display: none; }
+.panel-toggle {
+  position: absolute; top: 50%; left: 0; z-index: 3; transform: translateY(-50%);
+  width: 22px; height: 56px; padding: 0; border: 1px solid var(--border); border-left: 0;
+  border-radius: 0 8px 8px 0; background: #fff; color: #374151; font-size: 20px; line-height: 1;
+  cursor: pointer; box-shadow: 2px 0 6px rgb(0 0 0 / 0.12);
+}
+.panel-toggle:hover { background: #eff6ff; color: var(--accent); }
+.maplibregl-ctrl-scale { font-size: 11px; }
+
+@media (max-width: 800px) {
+  .layout.panel-closed { grid-template-rows: 100vh; }
+  .layout.panel-closed .map-area { height: 100vh; }
+  .panel-toggle { top: auto; bottom: 90px; }
+}
