@@ -45,6 +45,8 @@ and travel time. Enter an origin, destination, departure time and load weight. T
 **Interface**
 - Dark navy and teal theme with a site header. The date-time picker matches the theme.
 - US place search with type-ahead suggestions (Photon).
+- Load weight in **lb or kg** (remembered). It is always sent to the API in pounds,
+  because the load rules are defined in pounds.
 - **Collapsible side panel:** hide it to give the map the full width; your inputs are kept.
 - Mobile layout: the map stays on top and the panel scrolls below it.
 - Loading and error states, and a new search cancels the one in flight.

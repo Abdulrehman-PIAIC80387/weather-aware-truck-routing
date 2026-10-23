@@ -229,3 +229,14 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
   filter: invert(62%) sepia(62%) saturate(520%) hue-rotate(118deg) brightness(115%);
 }
 .plan-form input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Load field with lb / kg toggle */
+.load-field { display: grid; gap: 4px; }
+.load-head { display: flex; align-items: center; justify-content: space-between; }
+.load-head label { font-size: 0.85rem; font-weight: 600; }
+.unit-toggle { display: inline-flex; padding: 1px; border: 1px solid var(--border); border-radius: 6px; }
+.unit-toggle button {
+  padding: 0 7px; border: 0; border-radius: 5px; background: none; color: var(--muted);
+  font: 600 0.72rem system-ui, sans-serif; line-height: 18px; cursor: pointer;
+}
+.unit-toggle button.active { background: var(--accent-soft); color: var(--accent); }

@@ -1,10 +1,17 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { Interval, Place, PlanRequest } from "../types/plan";
 import { toLocalInput } from "../utils/format";
 import { LocationInput } from "./LocationInput";
 
 const INTERVALS: Interval[] = [10, 25, 50];
-const MAX_LOAD_LB = 80_000;
+// The API and the risk rules work in pounds; kilograms are only for entry and display.
+const UNITS = {
+  lb: { perLb: 1, max: 80_000 },
+  kg: { perLb: 0.45359237, max: 36_287 }, // 36,287 kg = 80,000 lb
+};
+type Unit = keyof typeof UNITS;
+const isUnit = (value: unknown): value is Unit => value === "lb" || value === "kg";
 
 interface PlanFormProps {
   isLoading: boolean;
@@ -16,6 +23,9 @@ export function PlanForm({ isLoading, onSubmit }: PlanFormProps) {
   const [destination, setDestination] = useState<Place | null>(null);
   const [departure, setDeparture] = useState(() => toLocalInput(new Date()));
   const [loadLb, setLoadLb] = useState(40_000);
+  const [unit, setUnit] = usePersistentState<Unit>("loadUnit", "lb", isUnit);
+  const loadId = useId();
+  const { perLb, max } = UNITS[unit];
   const [interval, setIntervalMiles] = useState<Interval>(25);
 
   function handleSubmit(event: FormEvent) {
@@ -49,18 +59,35 @@ export function PlanForm({ isLoading, onSubmit }: PlanFormProps) {
             onChange={(event) => setDeparture(event.target.value)}
           />
         </label>
-        <label>
-          Load (lb)
+        <div className="load-field">
+          <div className="load-head">
+            <label htmlFor={loadId}>Load</label>
+            <span className="unit-toggle" role="radiogroup" aria-label="Load unit">
+              {(Object.keys(UNITS) as Unit[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={unit === option}
+                  className={unit === option ? "active" : ""}
+                  onClick={() => setUnit(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </span>
+          </div>
           <input
+            id={loadId}
             type="number"
             min={0}
-            max={MAX_LOAD_LB}
-            step={500}
-            value={loadLb}
+            max={max}
+            step={1} // converted values are not round numbers, so no coarser step
+            value={Math.round(loadLb * perLb)}
             required
-            onChange={(event) => setLoadLb(Number(event.target.value))}
+            onChange={(event) => setLoadLb(Math.round(Number(event.target.value) / perLb))}
           />
-        </label>
+        </div>
       </div>
       <fieldset className="interval">
         <legend>Weather checkpoint every</legend>
