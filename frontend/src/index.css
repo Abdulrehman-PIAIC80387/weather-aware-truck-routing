@@ -222,3 +222,12 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
 .legend button:hover:not(:disabled) { border-color: var(--border); }
 .legend button.active { border-color: var(--accent); background: var(--accent-soft); }
 .legend button:disabled { opacity: 0.4; cursor: default; }
+
+/* Native date-time picker: dark pop-up with teal highlights, teal calendar icon */
+.plan-form input[type="datetime-local"] { color-scheme: dark; accent-color: var(--accent); }
+.plan-form input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer; opacity: 0.9;
+  /* tints the browser's black icon to the teal accent (#22c9a0) */
+  filter: invert(62%) sepia(62%) saturate(520%) hue-rotate(118deg) brightness(115%);
+}
+.plan-form input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
