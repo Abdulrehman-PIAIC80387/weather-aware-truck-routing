@@ -1,5 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { GeoJSONSource } from "maplibre-gl";
+import type { Point } from "geojson";
+import type { GeoJSONSource, MapGeoJSONFeature } from "maplibre-gl";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import Map, {
   Layer,
@@ -16,10 +17,21 @@ import { formatDuration, formatMiles, formatTime } from "../../utils/format";
 import { levelInfo } from "../../utils/risk";
 import { Legend } from "../Legend";
 import { BASEMAPS, type BasemapId, applyNavyBasemap } from "./basemap";
-import { bounds, checkpointPoints, gridCells, midpoint, routeSegments, truckPositions } from "./geojson";
+import {
+  bounds,
+  checkpointPoints,
+  gridCells,
+  levelBounds,
+  levelsPresent,
+  midpoint,
+  routeSegments,
+  truckPositions,
+} from "./geojson";
 import {
   INTERACTIVE_LAYERS,
   checkpointCircles,
+  checkpointClusters,
+  clusterCounts,
   riskGrid,
   routeCasing,
   routeLines,
@@ -55,15 +67,22 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   const basemapRef = useRef(basemap);
   basemapRef.current = basemap;
   const [hovered, setHovered] = useState<Picked | null>(null);
+  const [pointer, setPointer] = useState(false);
+  const [focus, setFocus] = useState<number | null>(null); // legend level shown alone
   const [opened, setOpened] = useState<Picked | null>(null);
 
   // Built once per plan, so react-map-gl never re-sends the same data to the map.
   const segments = useMemo(() => plan && routeSegments(plan), [plan]);
   const grid = useMemo(() => plan && gridCells(plan), [plan]);
   const trucks = useMemo(() => plan && truckPositions(plan, 0), [plan]);
-  const checkpoints = useMemo(() => plan && checkpointPoints(plan), [plan]);
-  const casingLayer = useMemo(() => routeCasing(BASEMAPS[basemap].casing), [basemap]);
-  const routeLayer = useMemo(() => routeLines(selected), [selected]);
+  const checkpoints = useMemo(() => plan && checkpointPoints(plan, focus), [plan, focus]);
+  const present = useMemo(() => (plan ? levelsPresent(plan) : new Set<number>()), [plan]);
+  const gridLayer = useMemo(() => riskGrid(focus), [focus]);
+  const casingLayer = useMemo(
+    () => routeCasing(BASEMAPS[basemap].casing, focus),
+    [basemap, focus],
+  );
+  const routeLayer = useMemo(() => routeLines(selected, focus), [selected, focus]);
   const checkpointLayer = useMemo(() => checkpointCircles(selected), [selected]);
   const truckLayer = useMemo(() => truckDots(selected), [selected]);
 
@@ -99,6 +118,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
 
   useEffect(() => {
     setOpened(null);
+    setFocus(null);
     if (plan && loaded) mapRef.current?.fitBounds(bounds(plan), { padding: 60, duration: 800 });
   }, [plan, loaded]);
 
@@ -109,7 +129,28 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
     return { layer: feature.layer.id, picked: { route, position } };
   }
 
+  function focusLevel(level: number | null) {
+    setFocus(level);
+    setOpened(null);
+    const area = plan && level !== null && levelBounds(plan, selected, level);
+    if (area) mapRef.current?.fitBounds(area, { padding: 80, duration: 800, maxZoom: 9 });
+  }
+
+  async function zoomIntoCluster(feature: MapGeoJSONFeature) {
+    const map = mapRef.current?.getMap();
+    const source = map?.getSource("checkpoints") as GeoJSONSource | undefined;
+    if (!map || !source) return;
+    const zoom = await source.getClusterExpansionZoom(feature.properties.cluster_id);
+    const [longitude, latitude] = (feature.geometry as Point).coordinates;
+    map.easeTo({ center: [longitude, latitude], zoom, duration: 600 });
+  }
+
   function handleClick(event: MapLayerMouseEvent) {
+    const cluster = event.features?.find((feature) => feature.layer.id === "clusters");
+    if (cluster) {
+      void zoomIntoCluster(cluster);
+      return;
+    }
     const hit = pick(event);
     if (!hit) return;
     onSelect(hit.picked.route);
@@ -117,6 +158,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
   }
 
   function handleHover(event: MapLayerMouseEvent) {
+    if (Boolean(event.features?.length) !== pointer) setPointer(!pointer);
     const hit = pick(event);
     const next = hit?.layer === "checkpoints" ? hit.picked : null;
     if (next?.route !== hovered?.route || next?.position !== hovered?.position) setHovered(next);
@@ -135,7 +177,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       mapStyle={BASEMAPS[basemap].url}
       styleDiffing={false}
       interactiveLayerIds={INTERACTIVE_LAYERS}
-      cursor={hovered ? "pointer" : "grab"}
+      cursor={pointer ? "pointer" : "grab"}
       onLoad={(event) => {
         // A base map change reloads the style; react-map-gl re-adds our layers after it.
         const map = event.target;
@@ -146,7 +188,10 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
       }}
       onClick={handleClick}
       onMouseMove={handleHover}
-      onMouseLeave={() => setHovered(null)}
+      onMouseLeave={() => {
+        setHovered(null);
+        setPointer(false);
+      }}
     >
       <NavigationControl position="top-right" showCompass={false} />
       <ScaleControl position="bottom-left" unit="metric" maxWidth={120} />
@@ -155,7 +200,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
         // Remounted per base map: its label layer id differs, so the grid is re-added
         // beneath the new labels once the new style has loaded instead of moved early.
         <Source key={basemap} id="grid" type="geojson" data={grid}>
-          <Layer {...riskGrid} beforeId={BASEMAPS[basemap].labelLayer} />
+          <Layer {...gridLayer} beforeId={BASEMAPS[basemap].labelLayer} />
         </Source>
       )}
       {segments && (
@@ -165,7 +210,17 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
         </Source>
       )}
       {checkpoints && (
-        <Source id="checkpoints" type="geojson" data={checkpoints}>
+        <Source
+          id="checkpoints"
+          type="geojson"
+          data={checkpoints}
+          cluster
+          clusterRadius={50}
+          clusterMaxZoom={7}
+          clusterProperties={{ worst: ["max", ["get", "risk"]] }}
+        >
+          <Layer {...checkpointClusters} />
+          <Layer {...clusterCounts} />
           <Layer {...checkpointLayer} />
         </Source>
       )}
@@ -174,7 +229,7 @@ export const RouteMap = forwardRef<RouteMapHandle, RouteMapProps>(function Route
           <Layer {...truckLayer} />
         </Source>
       )}
-      {plan && <Legend />}
+      {plan && <Legend focus={focus} present={present} onFocus={focusLevel} />}
 
       {plan?.routes.map((route, index) => {
         const [longitude, latitude] = midpoint(route);

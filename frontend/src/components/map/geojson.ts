@@ -18,17 +18,44 @@ export function routeSegments(plan: Plan): FeatureCollection<LineString> {
   };
 }
 
-export function checkpointPoints(plan: Plan): FeatureCollection<Point> {
+/** Checkpoints, optionally only those at the `focus` level. `risk` (-1 when unknown)
+ * lets clusters take the worst known level with a plain "max". */
+export function checkpointPoints(plan: Plan, focus: number | null): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
     features: plan.routes.flatMap((route, index) =>
-      route.checkpoints.map((checkpoint, position) => ({
-        type: "Feature",
-        properties: { route: index, position, level: checkpoint.level ?? UNKNOWN_DIGIT },
-        geometry: { type: "Point", coordinates: [checkpoint.longitude, checkpoint.latitude] },
-      })),
+      route.checkpoints.flatMap((checkpoint, position) => {
+        const level = checkpoint.level ?? UNKNOWN_DIGIT;
+        if (focus !== null && level !== focus) return [];
+        return [
+          {
+            type: "Feature" as const,
+            properties: { route: index, position, level, risk: checkpoint.level ?? -1 },
+            geometry: {
+              type: "Point" as const,
+              coordinates: [checkpoint.longitude, checkpoint.latitude],
+            },
+          },
+        ];
+      }),
     ),
   };
+}
+
+/** Bounds of the stretches at `level`, preferring the selected route; null when none. */
+export function levelBounds(plan: Plan, selected: number, level: number) {
+  const pathsAt = (route: PlannedRoute) =>
+    route.segments.filter((s) => (s.level ?? UNKNOWN_DIGIT) === level).flatMap((s) => s.path);
+  const own = pathsAt(plan.routes[selected]);
+  const points = own.length ? own : plan.routes.flatMap(pathsAt);
+  return points.length ? boundsOf(points) : null;
+}
+
+/** Levels that appear on any route or in any grid hour, for the legend. */
+export function levelsPresent(plan: Plan): Set<number> {
+  const levels = new Set(plan.grid.risk.flatMap((hours) => [...hours].map(Number)));
+  plan.routes.forEach((r) => r.segments.forEach((s) => levels.add(s.level ?? UNKNOWN_DIGIT)));
+  return levels;
 }
 
 /** The road position halfway along a route, for its on-map label. */
@@ -38,7 +65,10 @@ export function midpoint(route: PlannedRoute): LngLat {
 }
 
 export function bounds(plan: Plan): [LngLat, LngLat] {
-  const points = plan.routes.flatMap((route) => route.segments.flatMap((s) => s.path));
+  return boundsOf(plan.routes.flatMap((route) => route.segments.flatMap((s) => s.path)));
+}
+
+function boundsOf(points: LngLat[]): [LngLat, LngLat] {
   const longitudes = points.map(([lon]) => lon);
   const latitudes = points.map(([, lat]) => lat);
   return [

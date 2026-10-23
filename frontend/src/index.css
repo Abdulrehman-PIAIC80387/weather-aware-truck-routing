@@ -213,3 +213,12 @@ h2 { margin: 20px 0 8px; font-size: 1rem; }
 @media (max-width: 800px) {
   .basemap-switcher { top: auto; bottom: 120px; right: 10px; }
 }
+
+/* Clickable legend */
+.legend button {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid transparent;
+  border-radius: 6px; background: none; color: var(--text); font: inherit; cursor: pointer;
+}
+.legend button:hover:not(:disabled) { border-color: var(--border); }
+.legend button.active { border-color: var(--accent); background: var(--accent-soft); }
+.legend button:disabled { opacity: 0.4; cursor: default; }
